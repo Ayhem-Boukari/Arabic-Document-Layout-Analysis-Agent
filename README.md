@@ -1,164 +1,168 @@
-Arabic Document Layout Analysis Agent (FastAPI + YOLOv8)
+Voici un **README complet**, prêt à copier-coller dans GitHub, qui documente ton service FastAPI pour l’analyse de mise en page avec YOLOv8 :
 
-Service FastAPI qui charge un modèle YOLOv8 (analyse de mise en page de documents, journaux, etc.) et expose 3 endpoints :
+```markdown
+# 📰 Arabic Document Layout Analysis API (FastAPI + YOLOv8)
 
-POST /infer → renvoie un JSON de détections
+Service **FastAPI** exposant des endpoints pour l’analyse de mise en page de documents (journaux, formulaires, PDF convertis en images, etc.) avec un modèle **YOLOv8**.
 
-POST /infer_image → renvoie une image annotée (PNG)
+---
 
-POST /infer_yolo_txt → renvoie un fichier texte YOLO (format label)
+## 📑 Sommaire
+- [Aperçu des endpoints](#-aperçu-des-endpoints)
+- [Arborescence du projet](#-arborescence-du-projet)
+- [Prérequis & installation](#-prérequis--installation)
+- [Lancer le serveur](#-lancer-le-serveur)
+- [Tester rapidement](#-tester-rapidement)
+- [Formats de réponses](#-formats-de-réponses)
+- [Configuration & personnalisation](#-configuration--personnalisation)
+- [Dépendances & versions](#-dépendances--versions)
+- [Dépannage (FAQ)](#-dépannage-faq)
+- [Docker (optionnel)](#-docker-optionnel)
+- [Bonnes pratiques Git](#-bonnes-pratiques-git)
+- [Licence](#-licence)
 
-✅ Version Python requise : 3.11 (recommandé)
-✅ Poids YOLO attendus dans weights/best.pt
-✅ Classes lues depuis data/data.yaml
-✅ Seuils/filtres dans config/thresholds.json
-✅ CORS ouvert (intégration plateforme type DataUP)
+---
 
-Sommaire
+## 🔗 Aperçu des endpoints
 
-Aperçu des endpoints
+### `GET /health`
+Retourne un ping et des infos rapides (chemin des poids, classes chargées, version).
 
-Arborescence du projet
+### `POST /infer`
+- **Entrée :** `multipart/form-data` avec champ `file` (image)
+- **Paramètres optionnels :**
+  - `imgsz` *(int, défaut 1280)* — taille d’inférence YOLO
+  - `iou` *(float, défaut 0.5)* — seuil IoU pour NMS
+  - `conf_min` *(float, défaut 0.001)* — confiance minimale avant post-traitement
+- **Sortie :** JSON contenant largeur/hauteur, bboxes, classes, scores.
 
-Prérequis & installation (Python 3.11)
+### `POST /infer_image`
+Même entrée que `/infer` → renvoie **l’image annotée** (PNG).
 
-Lancer le serveur (Uvicorn)
+### `POST /infer_yolo_txt`
+Même entrée que `/infer` → renvoie un **fichier texte YOLO** :
 
-Tester rapidement
+```
 
-Formats de réponses (exemples)
+cls cx cy w h
 
-Configuration & personnalisation
+````
+(coordonnées normalisées ∈ [0,1]).
 
-Dépendances & versions
+---
 
-Dépannage (FAQ)
+## 📂 Arborescence du projet
 
-Docker (optionnel)
-
-Bonnes pratiques Git
-
-Aperçu des endpoints
-
-GET /health
-Ping + infos rapides : classes, chemin des poids, version.
-
-POST /infer
-Entrée : multipart/form-data avec champ file (image).
-Paramètres optionnels (form-data) :
-
-imgsz (int, défaut 1280) : taille d’inférence YOLO
-
-iou (float, défaut 0.5) : seuil IoU pour NMS
-
-conf_min (float, défaut 0.001) : seuil de confiance minimal avant post-traitement
-Sortie : JSON (bbox, scores, classes).
-
-POST /infer_image
-Même entrée que /infer, renvoie l’image annotée (PNG) avec les boxes en couleurs par classe.
-
-POST /infer_yolo_txt
-Même entrée que /infer, renvoie un texte au format label YOLO :
-cls cx cy w h (coordonnées normalisées au range [0,1]).
-
-L’app applique ensuite des filtres de confiance par classe + quelques règles “layout” simples (par ex. minimiser les doublons inutiles).
-
-Arborescence du projet
+```text
 repo_root/
 ├─ app/
 │  ├─ __init__.py
 │  ├─ main.py            # FastAPI (endpoints /health, /infer, /infer_image, /infer_yolo_txt)
 │  ├─ utils.py           # lecture classes YAML + thresholds.json
 │  ├─ postprocess.py     # filtres par classe + règles simples layout
-│  └─ draw.py            # rendu des boxes (couleur par classe, épaisseur, labels)
+│  └─ draw.py            # rendu des boxes (couleur par classe)
 ├─ weights/
-│  └─ best.pt            # <-- vos poids YOLOv8 finaux (≈ 20–30 MB)
+│  └─ best.pt            # <-- vos poids YOLOv8 finaux (~20-30 MB)
 ├─ data/
-│  └─ data.yaml          # <-- YAML Ultralytics avec la liste des classes (names: [...])
+│  └─ data.yaml          # <-- classes YOLO (names: [...])
 ├─ config/
-│  └─ thresholds.json    # <-- seuils par classe + éventuelles classes à exclure
+│  └─ thresholds.json    # <-- seuils par classe + exclusions
 ├─ requirements.txt
 └─ README.md
+````
 
-Prérequis & installation (Python 3.11)
+---
 
-Installer Python 3.11
+## 🛠 Prérequis & installation
 
-Windows : python.org
+### 1️⃣ Installer **Python 3.11**
 
-Linux/Mac : via pyenv, asdf, ou gestionnaire de paquets.
+* **Windows :** [python.org](https://www.python.org/downloads/)
+* **Linux / macOS :** via `pyenv`, `asdf`, ou package manager.
 
-Créer un environnement virtuel (recommandé)
+### 2️⃣ Créer un environnement virtuel (recommandé)
 
-Windows (PowerShell) :
-
+```bash
+# Windows (PowerShell)
 py -3.11 -m venv venv311
 venv311\Scripts\Activate.ps1
 
-
-Linux / macOS :
-
+# Linux / macOS
 python3.11 -m venv venv311
 source venv311/bin/activate
+```
 
+### 3️⃣ Installer les dépendances
 
-Installer les dépendances
-
+```bash
 pip install --upgrade pip
 pip install -r requirements.txt
+```
 
+Si torch ne s’installe pas automatiquement (CPU) :
 
-Si torch échoue à s’installer automatiquement, essaye (CPU) :
-
+```bash
 pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
 
+### 4️⃣ Déposer vos fichiers essentiels
 
-Déposer vos fichiers essentiels
+* **Poids YOLO :** `weights/best.pt`
+* **Classes :** `data/data.yaml`
+* **Seuils :** `config/thresholds.json`
 
-Poids : weights/best.pt
+---
 
-Classes : data/data.yaml (contient names: [...])
+## 🚀 Lancer le serveur
 
-Seuils : config/thresholds.json
-
-Lancer le serveur (Uvicorn)
-
-Depuis la racine du projet (dans le venv activé) :
-
+```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --reload
+```
 
+* Swagger UI : [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+* ReDoc : [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+* Health : [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
 
-Swagger UI : http://127.0.0.1:8000/docs
+---
 
-ReDoc : http://127.0.0.1:8000/redoc
+## ⚡ Tester rapidement
 
-Health : http://127.0.0.1:8000/health
+### 1) Ping
 
---reload redémarre automatiquement à chaque modification du code (utile en dev).
-
-Tester rapidement
-1) Ping & infos
+```bash
 curl http://127.0.0.1:8000/health
+```
 
-2) JSON de détections
+### 2) JSON de détections
+
+```bash
 curl -X POST "http://127.0.0.1:8000/infer" \
   -F "file=@/chemin/vers/mon_image.jpg" \
   -F "imgsz=1280" -F "iou=0.5" -F "conf_min=0.001"
+```
 
-3) Image annotée (PNG)
+### 3) Image annotée (PNG)
+
+```bash
 curl -X POST "http://127.0.0.1:8000/infer_image" \
   -F "file=@/chemin/vers/mon_image.jpg" \
   --output result.png
+```
 
-4) Fichier YOLO .txt
+### 4) Fichier YOLO .txt
+
+```bash
 curl -X POST "http://127.0.0.1:8000/infer_yolo_txt" \
   -F "file=@/chemin/vers/mon_image.jpg"
+```
 
+---
 
-Via Swagger UI (/docs), tu peux tester en uploadant un fichier directement dans l’interface.
+## 📊 Formats de réponses
 
-Formats de réponses (exemples)
-/infer (JSON)
+### Exemple `/infer` (JSON)
+
+```json
 {
   "width": 1654,
   "height": 2338,
@@ -172,20 +176,15 @@ Formats de réponses (exemples)
     }
   ]
 }
+```
 
+---
 
-x1,y1,x2,y2 : coordonnées pixels (coin haut-gauche → bas-droit).
+## ⚙️ Configuration & personnalisation
 
-cx,cy,w,h : coordonnées normalisées (format YOLO, centre/largeur/hauteur ∈ [0,1]).
+### 1) data/data.yaml (classes)
 
-/infer_yolo_txt
-1 0.500000 0.060000 0.860000 0.060000
-
-Configuration & personnalisation
-1) data/data.yaml (classes)
-
-Exemple minimal :
-
+```yaml
 names:
   - Header
   - Title
@@ -198,11 +197,11 @@ names:
   - Keyvalue
   - List-item
   - Check-box
+```
 
-2) config/thresholds.json (seuils & exclusions)
+### 2) config/thresholds.json (seuils & exclusions)
 
-Exemple :
-
+```json
 {
   "per_class_conf": {
     "Header": 0.25,
@@ -219,17 +218,11 @@ Exemple :
   },
   "exclude": []
 }
+```
 
+### 3) Couleurs (app/draw\.py)
 
-per_class_conf : seuil de confiance après prédiction (post-filtre).
-
-exclude : liste de noms de classes à ignorer totalement.
-
-3) Couleurs des boxes (par classe)
-
-Dans app/draw.py, la map couleur est définie (ex CLASS_COLOR_MAP).
-Tu peux ajuster couleur/épaisseur/label. Exemple :
-
+```python
 CLASS_COLOR_MAP = {
     "Header": (255, 0, 0),
     "Title": (0, 165, 255),
@@ -238,14 +231,17 @@ CLASS_COLOR_MAP = {
 }
 BOX_THICKNESS = 2
 FONT_SCALE = 0.6
+```
 
+*(OpenCV utilise BGR et non RGB.)*
 
-OpenCV utilise BGR (et non RGB).
+---
 
-Dépendances & versions
+## 📦 Dépendances & versions
 
-Dans requirements.txt (ex. recommandé) :
+Exemple `requirements.txt` :
 
+```
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 ultralytics==8.3.175
@@ -254,44 +250,35 @@ pydantic==2.8.2
 python-multipart==0.0.9
 PyYAML==6.0.2
 numpy==1.26.4
+```
 
+---
 
-ultralytics installera torch automatiquement.
-Si souci, installe torch CPU manuellement :
+## 🩺 Dépannage (FAQ)
 
-pip install torch --index-url https://download.pytorch.org/whl/cpu
+* **Poids manquants :** vérifier `weights/best.pt`
+* **Classe inconnue :** doit exister dans `data/data.yaml`
+* **Performance lente (CPU) :** réduire `imgsz` (ex. 960)
+* **Erreur OpenCV (GTK/Qt) :** utiliser `opencv-python-headless`
+* **CORS :** ouvert par défaut (modifier dans `main.py` si besoin)
 
-Dépannage (FAQ)
+---
 
-Erreur poids manquants : vérifie que weights/best.pt existe et correspond bien à ton modèle.
+## 🐳 Docker (optionnel)
 
-Classe inconnue : la classe prédite doit exister dans data/data.yaml (names: [...]).
-
-Performance lente (CPU) : c’est normal sur des images 1280px et YOLOv8. Réduis imgsz (ex. 960) pour aller plus vite.
-
-Erreur OpenCV (GTK/Qt) sur serveur : utilise opencv-python-headless.
-
-CORS : est déjà permissif. Pour restreindre, ajuste allow_origins dans app/main.py.
-
-Docker (optionnel)
-
-Un Dockerfile CPU minimal :
-
+```dockerfile
 FROM python:3.11-slim
 
-# Dépendances système utiles (libgl pour OpenCV)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 libgl1 ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copie d'abord requirements pour profiter du cache build
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
  && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
-# Copie du code et des assets
 COPY app ./app
 COPY weights ./weights
 COPY data ./data
@@ -300,21 +287,22 @@ COPY config ./config
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
+```
 
 Build & run :
 
+```bash
 docker build -t newspaper_yolo_api .
 docker run --rm -p 8000:8000 newspaper_yolo_api
+```
 
-Bonnes pratiques Git
+---
 
-Ne pas commiter d’environnements virtuels (venv/, .venv/, venv311/).
+## 🧹 Bonnes pratiques Git
 
-Ne pas commiter de gros fichiers/lots de données (datasets bruts, caches).
+`.gitignore` minimal :
 
-Ajouter un .gitignore :
-
+```
 __pycache__/
 *.pyc
 *.pyo
@@ -333,11 +321,24 @@ Thumbs.db
 .vscode/
 .idea/
 unified_dataset/
+```
 
+⚠️ **Ne pas committer :**
 
-⚠️ GitHub refuse tout fichier > 100 MB (ex. DLLs de PyTorch si tu commits le venv).
-Tes poids best.pt ≈ 20–30 MB sont OK.
+* environnements virtuels
+* datasets bruts
+* fichiers > 100 MB (GitHub les refuse)
 
-Licence
+---
 
-Au choix (MIT recommandée). Ajoute un LICENSE si besoin.
+## 📜 Licence
+
+MIT (recommandé).
+Ajoute un fichier `LICENSE` si nécessaire.
+
+---
+
+```
+
+Veux-tu que je te génère **un `requirements.txt` complet et figé** (versions exactes de torch incluses pour CPU) pour éviter les incompatibilités lors du déploiement ?
+```
