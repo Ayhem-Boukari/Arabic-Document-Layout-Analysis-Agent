@@ -1,6 +1,3 @@
-Voici un **README complet**, prêt à copier-coller dans GitHub, qui documente ton service FastAPI pour l’analyse de mise en page avec YOLOv8 :
-
-```markdown
 # 📰 Arabic Document Layout Analysis API (FastAPI + YOLOv8)
 
 Service **FastAPI** exposant des endpoints pour l’analyse de mise en page de documents (journaux, formulaires, PDF convertis en images, etc.) avec un modèle **YOLOv8**.
