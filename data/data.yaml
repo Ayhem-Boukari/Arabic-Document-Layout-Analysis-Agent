@@ -1,0 +1,16 @@
+train: C:\Users\MSI\Desktop\pdf_converter\newspaper_yolo\unified_dataset\images\train
+val:   C:\Users\MSI\Desktop\pdf_converter\newspaper_yolo\unified_dataset\images\val
+
+names:
+  0: Header
+  1: Title
+  2: Text
+  3: Table
+  4: Image
+  5: Footer
+  6: Stamp or Signature
+  7: Caption
+  8: Keyvalue
+  9: List-item
+  10: Check-box
+  11: Formulas

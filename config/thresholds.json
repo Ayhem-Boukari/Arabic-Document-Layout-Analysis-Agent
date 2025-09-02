@@ -1,0 +1,17 @@
+{
+  "default_conf": 0.35,
+  "class_thresholds": {
+    "Image": 0.35,
+    "Table": 0.40,
+    "Caption": 0.45,
+    "Title": 0.35,
+    "Text": 0.35,
+    "Header": 0.30,
+    "List-item": 0.35,
+    "Footer": 0.70,
+    "Keyvalue": 0.80,
+    "Check-box": 0.80,
+    "Stamp or Signature": 0.70
+  },
+  "exclude_classes": []
+}

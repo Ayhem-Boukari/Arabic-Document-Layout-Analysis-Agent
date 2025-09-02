@@ -1,0 +1,23 @@
+# Python / build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.log
+
+# Environnements virtuels
+.venv/
+venv/
+venv311/
+
+# Dossiers lourds/options
+runs/
+*.cache
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Données locales à ne pas pusher
+unified_dataset/
