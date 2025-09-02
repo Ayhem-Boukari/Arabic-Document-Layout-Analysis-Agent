@@ -335,7 +335,3 @@ Ajoute un fichier `LICENSE` si nécessaire.
 
 ---
 
-```
-
-Veux-tu que je te génère **un `requirements.txt` complet et figé** (versions exactes de torch incluses pour CPU) pour éviter les incompatibilités lors du déploiement ?
-```
