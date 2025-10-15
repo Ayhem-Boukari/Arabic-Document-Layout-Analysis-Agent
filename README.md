@@ -1,164 +1,136 @@
-# 📰 Arabic Document Layout Analysis API (FastAPI + YOLOv8)
+# 📄 Arabic Document Layout Analysis API
 
-Service **FastAPI** exposant des endpoints pour l’analyse de mise en page de documents (journaux, formulaires, PDF convertis en images, etc.) avec un modèle **YOLOv8**.
+<div align="center">
 
----
+**FastAPI Service for Advanced Document Structure Detection using YOLOv8**
 
-## 📑 Sommaire
-- [Aperçu des endpoints](#-aperçu-des-endpoints)
-- [Arborescence du projet](#-arborescence-du-projet)
-- [Prérequis & installation](#-prérequis--installation)
-- [Lancer le serveur](#-lancer-le-serveur)
-- [Tester rapidement](#-tester-rapidement)
-- [Formats de réponses](#-formats-de-réponses)
-- [Configuration & personnalisation](#-configuration--personnalisation)
-- [Dépendances & versions](#-dépendances--versions)
-- [Dépannage (FAQ)](#-dépannage-faq)
-- [Docker (optionnel)](#-docker-optionnel)
-- [Bonnes pratiques Git](#-bonnes-pratiques-git)
-- [Licence](#-licence)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-Object%20Detection-00FFFF?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python)
+![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?style=for-the-badge&logo=opencv)
 
----
+*High-performance document layout analysis for newspapers, forms, and converted PDFs*
 
-## 🔗 Aperçu des endpoints
+</div>
+
+## 📋 Overview
+
+This **FastAPI service** provides robust endpoints for document layout analysis using a fine-tuned **YOLOv8 model**. The API processes document images (newspapers, forms, converted PDFs) and returns precise detection of layout elements including titles, paragraphs, tables, images, and other structural components.
+
+## 🔌 API Endpoints
 
 ### `GET /health`
-Retourne un ping et des infos rapides (chemin des poids, classes chargées, version).
+**Service Status Check**
+- Returns API status and configuration details
+- Includes model information and loaded classes
+- Quick verification of service availability
 
 ### `POST /infer`
-- **Entrée :** `multipart/form-data` avec champ `file` (image)
-- **Paramètres optionnels :**
-  - `imgsz` *(int, défaut 1280)* — taille d’inférence YOLO
-  - `iou` *(float, défaut 0.5)* — seuil IoU pour NMS
-  - `conf_min` *(float, défaut 0.001)* — confiance minimale avant post-traitement
-- **Sortie :** JSON contenant largeur/hauteur, bboxes, classes, scores.
+**JSON Detection Results**
+- **Input**: `multipart/form-data` with image file
+- **Parameters**:
+  - `imgsz` (int, default: 1280) - Inference image size
+  - `iou` (float, default: 0.5) - NMS IoU threshold
+  - `conf_min` (float, default: 0.001) - Minimum confidence threshold
+- **Output**: Structured JSON with bounding boxes, classes, and confidence scores
 
 ### `POST /infer_image`
-Même entrée que `/infer` → renvoie **l’image annotée** (PNG).
+**Annotated Image Output**
+- Same input as `/infer`
+- Returns PNG image with visualized detections
+- Perfect for visual verification and debugging
 
 ### `POST /infer_yolo_txt`
-Même entrée que `/infer` → renvoie un **fichier texte YOLO** :
+**YOLO Format Export**
+- Same input as `/infer`
+- Returns YOLO-formatted text file with normalized coordinates
+- Format: `cls cx cy w h` (coordinates ∈ [0,1])
+
+## 🏗 Project Structure
 
 ```
+document-layout-api/
+├── 📁 app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI application and endpoints
+│   ├── utils.py             # YAML class loading and configuration
+│   ├── postprocess.py       # Class-specific filtering and layout rules
+│   └── draw.py              # Bounding box visualization utilities
+├── 📁 weights/
+│   └── best.pt              # YOLOv8 trained weights
+├── 📁 data/
+│   └── data.yaml            # YOLO class definitions
+├── 📁 config/
+│   └── thresholds.json      # Class-specific confidence thresholds
+├── requirements.txt
+└── README.md
+```
 
-cls cx cy w h
+## ⚙️ Installation & Setup
 
-````
-(coordonnées normalisées ∈ [0,1]).
+### Prerequisites
+- **Python 3.11** or higher
+- Virtual environment recommended
 
----
+### Step-by-Step Installation
 
-## 📂 Arborescence du projet
+1. **Create Virtual Environment**
+   ```bash
+   # Windows
+   python -m venv venv
+   .\venv\Scripts\Activate
 
-```text
-repo_root/
-├─ app/
-│  ├─ __init__.py
-│  ├─ main.py            # FastAPI (endpoints /health, /infer, /infer_image, /infer_yolo_txt)
-│  ├─ utils.py           # lecture classes YAML + thresholds.json
-│  ├─ postprocess.py     # filtres par classe + règles simples layout
-│  └─ draw.py            # rendu des boxes (couleur par classe)
-├─ weights/
-│  └─ best.pt            # <-- vos poids YOLOv8 finaux (~20-30 MB)
-├─ data/
-│  └─ data.yaml          # <-- classes YOLO (names: [...])
-├─ config/
-│  └─ thresholds.json    # <-- seuils par classe + exclusions
-├─ requirements.txt
-└─ README.md
-````
+   # Linux/macOS
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
 
----
+2. **Install Dependencies**
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
 
-## 🛠 Prérequis & installation
+3. **Configure Essential Files**
+   - Place trained model: `weights/best.pt`
+   - Configure classes: `data/data.yaml`
+   - Set thresholds: `config/thresholds.json`
 
-### 1️⃣ Installer **Python 3.11**
+## 🚀 Quick Start
 
-* **Windows :** [python.org](https://www.python.org/downloads/)
-* **Linux / macOS :** via `pyenv`, `asdf`, ou package manager.
-
-### 2️⃣ Créer un environnement virtuel (recommandé)
-
+### Launch Server
 ```bash
-# Windows (PowerShell)
-py -3.11 -m venv venv311
-venv311\Scripts\Activate.ps1
-
-# Linux / macOS
-python3.11 -m venv venv311
-source venv311/bin/activate
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 3️⃣ Installer les dépendances
+### Access Points
+- **Interactive Documentation**: http://127.0.0.1:8000/docs
+- **Alternative Documentation**: http://127.0.0.1:8000/redoc
+- **Health Check**: http://127.0.0.1:8000/health
 
-```bash
-pip install --upgrade pip
-pip install -r requirements.txt
-```
+## ⚡ API Testing
 
-Si torch ne s’installe pas automatiquement (CPU) :
-
-```bash
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-```
-
-### 4️⃣ Déposer vos fichiers essentiels
-
-* **Poids YOLO :** `weights/best.pt`
-* **Classes :** `data/data.yaml`
-* **Seuils :** `config/thresholds.json`
-
----
-
-## 🚀 Lancer le serveur
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --reload
-```
-
-* Swagger UI : [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-* ReDoc : [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-* Health : [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
-
----
-
-## ⚡ Tester rapidement
-
-### 1) Ping
-
+### Health Check
 ```bash
 curl http://127.0.0.1:8000/health
 ```
 
-### 2) JSON de détections
-
+### JSON Detection
 ```bash
 curl -X POST "http://127.0.0.1:8000/infer" \
-  -F "file=@/chemin/vers/mon_image.jpg" \
+  -F "file=@document.jpg" \
   -F "imgsz=1280" -F "iou=0.5" -F "conf_min=0.001"
 ```
 
-### 3) Image annotée (PNG)
-
+### Annotated Image
 ```bash
 curl -X POST "http://127.0.0.1:8000/infer_image" \
-  -F "file=@/chemin/vers/mon_image.jpg" \
-  --output result.png
+  -F "file=@document.jpg" --output annotated.png
 ```
 
-### 4) Fichier YOLO .txt
+## 📊 Response Format
 
-```bash
-curl -X POST "http://127.0.0.1:8000/infer_yolo_txt" \
-  -F "file=@/chemin/vers/mon_image.jpg"
-```
-
----
-
-## 📊 Formats de réponses
-
-### Exemple `/infer` (JSON)
-
+### Example JSON Response
 ```json
 {
   "width": 1654,
@@ -175,12 +147,9 @@ curl -X POST "http://127.0.0.1:8000/infer_yolo_txt" \
 }
 ```
 
----
+## ⚙️ Configuration
 
-## ⚙️ Configuration & personnalisation
-
-### 1) data/data.yaml (classes)
-
+### Class Definitions (`data/data.yaml`)
 ```yaml
 names:
   - Header
@@ -196,8 +165,7 @@ names:
   - Check-box
 ```
 
-### 2) config/thresholds.json (seuils & exclusions)
-
+### Confidence Thresholds (`config/thresholds.json`)
 ```json
 {
   "per_class_conf": {
@@ -212,33 +180,13 @@ names:
     "Keyvalue": 0.25,
     "List-item": 0.25,
     "Check-box": 0.15
-  },
-  "exclude": []
+  }
 }
 ```
 
-### 3) Couleurs (app/draw\.py)
+## 📦 Dependencies
 
-```python
-CLASS_COLOR_MAP = {
-    "Header": (255, 0, 0),
-    "Title": (0, 165, 255),
-    "Text": (0, 255, 0),
-    ...
-}
-BOX_THICKNESS = 2
-FONT_SCALE = 0.6
-```
-
-*(OpenCV utilise BGR et non RGB.)*
-
----
-
-## 📦 Dépendances & versions
-
-Exemple `requirements.txt` :
-
-```
+```txt
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 ultralytics==8.3.175
@@ -249,32 +197,17 @@ PyYAML==6.0.2
 numpy==1.26.4
 ```
 
----
-
-## 🩺 Dépannage (FAQ)
-
-* **Poids manquants :** vérifier `weights/best.pt`
-* **Classe inconnue :** doit exister dans `data/data.yaml`
-* **Performance lente (CPU) :** réduire `imgsz` (ex. 960)
-* **Erreur OpenCV (GTK/Qt) :** utiliser `opencv-python-headless`
-* **CORS :** ouvert par défaut (modifier dans `main.py` si besoin)
-
----
-
-## 🐳 Docker (optionnel)
+## 🐳 Docker Deployment
 
 ```dockerfile
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libglib2.0-0 libgl1 ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+    libglib2.0-0 libgl1 ca-certificates
 
 WORKDIR /app
-
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
- && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 COPY weights ./weights
@@ -282,56 +215,27 @@ COPY data ./data
 COPY config ./config
 
 EXPOSE 8000
-
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-Build & run :
-
+**Build and Run:**
 ```bash
-docker build -t newspaper_yolo_api .
-docker run --rm -p 8000:8000 newspaper_yolo_api
+docker build -t document-layout-api .
+docker run -p 8000:8000 document-layout-api
 ```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+- **Missing weights**: Ensure `weights/best.pt` exists
+- **Unknown classes**: Verify class names in `data/data.yaml`
+- **Slow performance**: Reduce `imgsz` parameter (e.g., 960)
+- **OpenCV errors**: Use `opencv-python-headless` version
 
 ---
 
-## 🧹 Bonnes pratiques Git
+<div align="center">
 
-`.gitignore` minimal :
+**Arabic Document Layout Analysis API** - *Precise document structure detection powered by YOLOv8*
 
-```
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-*.log
-
-.venv/
-venv/
-venv311/
-
-runs/
-*.cache
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-unified_dataset/
-```
-
-⚠️ **Ne pas committer :**
-
-* environnements virtuels
-* datasets bruts
-* fichiers > 100 MB (GitHub les refuse)
-
----
-
-## 📜 Licence
-
-MIT (recommandé).
-Ajoute un fichier `LICENSE` si nécessaire.
-
----
-
+</div>
